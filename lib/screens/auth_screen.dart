@@ -19,17 +19,22 @@ class _AuthScreenState extends State<AuthScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(isLogin ? 'Login' : 'Sign Up')),
-      body: BlocConsumer<AuthCubit, AuthState>(
+      body: BlocConsumer<AuthCubit, AuthState>(        // <-- Here you use BlocConsumer
         listener: (context, state) {
           if (state is AuthFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.red,
+              ),
             );
           } else if (state is AuthSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Success!'), backgroundColor: Colors.green),
+              const SnackBar(
+                content: Text('Success!'),
+                backgroundColor: Colors.green,
+              ),
             );
-            // Navigate to notes screen (placeholder for now)
             Navigator.pushReplacementNamed(context, '/notes');
           }
         },
