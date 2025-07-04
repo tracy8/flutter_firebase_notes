@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../cubit/auth/auth_cubit.dart';
-import '../cubit/auth/auth_state.dart';
+
+import '../cubit/authentication/auth_cubit.dart';
+import '../cubit/authentication/auth_state.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -11,17 +12,18 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+
   bool isLogin = true;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(isLogin ? 'Login' : 'Sign Up')),
-      body: BlocConsumer<AuthCubit, AuthState>(        // <-- Here you use BlocConsumer
+      body: BlocConsumer<AuthCubit, AuthState>(
         listener: (context, state) {
-          if (state is AuthFailure) {
+          if (state is AuthError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
@@ -29,13 +31,15 @@ class _AuthScreenState extends State<AuthScreen> {
               ),
             );
           } else if (state is AuthSuccess) {
+            // Navigate to Notes Screen later
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Success!'),
+                content: Text("Authentication Success"),
                 backgroundColor: Colors.green,
               ),
             );
-            Navigator.pushReplacementNamed(context, '/notes');
+
+            // TODO: Replace this with Navigator to Notes Screen
           }
         },
         builder: (context, state) {
@@ -44,16 +48,25 @@ class _AuthScreenState extends State<AuthScreen> {
           }
 
           return Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                TextField(controller: _emailController, decoration: const InputDecoration(labelText: 'Email')),
-                TextField(controller: _passwordController, decoration: const InputDecoration(labelText: 'Password'), obscureText: true),
-                const SizedBox(height: 20),
+                TextField(
+                  controller: emailController,
+                  decoration: const InputDecoration(labelText: 'Email'),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: passwordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(labelText: 'Password'),
+                ),
+                const SizedBox(height: 32),
                 ElevatedButton(
                   onPressed: () {
-                    final email = _emailController.text.trim();
-                    final password = _passwordController.text.trim();
+                    final email = emailController.text.trim();
+                    final password = passwordController.text.trim();
+
                     if (isLogin) {
                       context.read<AuthCubit>().signIn(email, password);
                     } else {
@@ -64,11 +77,14 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
                 TextButton(
                   onPressed: () {
-                    setState(() => isLogin = !isLogin);
-                    context.read<AuthCubit>().reset();
+                    setState(() {
+                      isLogin = !isLogin;
+                    });
                   },
-                  child: Text(isLogin ? 'Don\'t have an account? Sign Up' : 'Already have an account? Login'),
-                ),
+                  child: Text(
+                    isLogin ? 'Don\'t have an account? Sign Up' : 'Already have an account? Login',
+                  ),
+                )
               ],
             ),
           );
