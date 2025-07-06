@@ -1,6 +1,6 @@
 {
-    "name": "flutter_firebase_notes",
-    "short_name": "flutter_firebase_notes",
+    "name": "flutter_notes_app_firebase",
+    "short_name": "flutter_notes_app_firebase",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

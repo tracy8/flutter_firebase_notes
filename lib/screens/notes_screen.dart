@@ -1,153 +1,230 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
+import '../providers/notes_provider.dart';
+import '../models/note.dart';
+import '../widgets/add_note_dialog.dart';
+import '../widgets/edit_note_dialog.dart';
+import '../widgets/delete_confirmation_dialog.dart';
 
-import '../cubit/notes/note_cubit.dart';
-import '../data/note_repository_impl.dart';
-import '../domain/models/note_model.dart';
-import '../cubit/notes/note_state.dart';
-
-class NotesScreen extends StatelessWidget {
+class NotesScreen extends StatefulWidget {
   const NotesScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final userId = FirebaseAuth.instance.currentUser!.uid;
+  State<NotesScreen> createState() => _NotesScreenState();
+}
 
-    return BlocProvider(
-      create: (_) => NoteCubit(
-        repository: NoteRepositoryImpl(),
-        userId: userId,
-      )..fetchNotes(),
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('My Notes'),
-          actions: [
+class _NotesScreenState extends State<NotesScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final notesProvider = Provider.of<NotesProvider>(context, listen: false);
+
+      if (authProvider.user != null) {
+        notesProvider.startListeningToNotes(authProvider.user!.uid);
+      }
+    });
+  }
+
+  void _showSnackBar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : Colors.green,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  Future<void> _showAddNoteDialog() async {
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => const AddNoteDialog(),
+    );
+
+    if (result != null && result.isNotEmpty && mounted) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final notesProvider = Provider.of<NotesProvider>(context, listen: false);
+
+      final success = await notesProvider.addNote(
+        result,
+        authProvider.user!.uid,
+      );
+      if (mounted) {
+        if (success) {
+          _showSnackBar('Note added successfully!');
+        } else {
+          _showSnackBar(notesProvider.errorMessage, isError: true);
+        }
+      }
+    }
+  }
+
+  Future<void> _showEditNoteDialog(Note note) async {
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => EditNoteDialog(initialText: note.text),
+    );
+
+    if (result != null && result != note.text && mounted) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final notesProvider = Provider.of<NotesProvider>(context, listen: false);
+
+      final success = await notesProvider.updateNote(
+        note.id,
+        result,
+        authProvider.user!.uid,
+      );
+      if (mounted) {
+        if (success) {
+          _showSnackBar('Note updated successfully!');
+        } else {
+          _showSnackBar(notesProvider.errorMessage, isError: true);
+        }
+      }
+    }
+  }
+
+  Future<void> _showDeleteConfirmationDialog(Note note) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => DeleteConfirmationDialog(noteText: note.text),
+    );
+
+    if (confirmed == true && mounted) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final notesProvider = Provider.of<NotesProvider>(context, listen: false);
+
+      final success = await notesProvider.deleteNote(
+        note.id,
+        authProvider.user!.uid,
+      );
+      if (mounted) {
+        if (success) {
+          _showSnackBar('Note deleted successfully!');
+        } else {
+          _showSnackBar(notesProvider.errorMessage, isError: true);
+        }
+      }
+    }
+  }
+
+  Future<void> _signOut() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final notesProvider = Provider.of<NotesProvider>(context, listen: false);
+
+    await authProvider.signOut();
+    notesProvider.clearNotes();
+    _showSnackBar('Signed out successfully!');
+  }
+
+  Widget _buildEmptyState() {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.note_add, size: 64, color: Colors.grey),
+          SizedBox(height: 16),
+          Text(
+            'Nothing here yet—tap + to add a note.',
+            style: TextStyle(fontSize: 16, color: Colors.grey),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNoteCard(Note note) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
+        title: Text(
+          note.text,
+          style: const TextStyle(fontSize: 16),
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(
+            'Updated: ${_formatDate(note.updatedAt)}',
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+          ),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
             IconButton(
-              icon: const Icon(Icons.logout),
-              onPressed: () async {
-                await FirebaseAuth.instance.signOut();
-                Navigator.pushReplacementNamed(context, '/');
-              },
-            )
+              icon: const Icon(Icons.edit, color: Colors.blue),
+              onPressed: () => _showEditNoteDialog(note),
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete, color: Colors.red),
+              onPressed: () => _showDeleteConfirmationDialog(note),
+            ),
           ],
         ),
-        body: BlocConsumer<NoteCubit, NoteState>(
-          listener: (context, state) {
-            if (state is NoteError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.message),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
-          },
-          builder: (context, state) {
-            if (state is NoteLoading) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (state is NoteLoaded) {
-              final notes = state.notes;
-
-              if (notes.isEmpty) {
-                return const Center(child: Text("No notes yet. Tap + to add."));
-              }
-
-              return ListView.builder(
-                itemCount: notes.length,
-                itemBuilder: (context, index) {
-                  final note = notes[index];
-                  return Card(
-                    margin:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: ListTile(
-                      title: Text(note.text),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit),
-                            onPressed: () => _showNoteDialog(context,
-                                isEdit: true, note: note),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete),
-                            onPressed: () => _confirmDelete(context, note.id),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              );
-            }
-            return const SizedBox();
-          },
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () => _showNoteDialog(context),
-          child: const Icon(Icons.add),
-        ),
       ),
     );
   }
 
-  void _showNoteDialog(BuildContext context,
-      {bool isEdit = false, Note? note}) {
-    final controller = TextEditingController(text: isEdit ? note?.text : '');
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
 
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text(isEdit ? 'Edit Note' : 'Add Note'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(hintText: 'Enter note...'),
-        ),
+    if (difference.inDays > 0) {
+      return '${difference.inDays}d ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}m ago';
+    } else {
+      return 'Just now';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Your Notes'),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final text = controller.text.trim();
-              if (text.isNotEmpty) {
-                final cubit = context.read<NoteCubit>();
-                if (isEdit && note != null) {
-                  cubit.updateNote(note.id, text);
-                } else {
-                  cubit.addNote(text);
-                }
-                Navigator.pop(context);
-              }
-            },
-            child: Text(isEdit ? 'Update' : 'Add'),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: _signOut,
+            tooltip: 'Sign Out',
           ),
         ],
       ),
-    );
-  }
+      body: Consumer<NotesProvider>(
+        builder: (context, notesProvider, child) {
+          if (notesProvider.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-  void _confirmDelete(BuildContext context, String noteId) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Confirm Delete'),
-        content: const Text('Are you sure you want to delete this note?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              context.read<NoteCubit>().deleteNote(noteId);
-              Navigator.pop(context);
+          if (!notesProvider.hasNotes) {
+            return _buildEmptyState();
+          }
+
+          return ListView.builder(
+            itemCount: notesProvider.notes.length,
+            itemBuilder: (context, index) {
+              final note = notesProvider.notes[index];
+              return _buildNoteCard(note);
             },
-            child: const Text('Delete'),
-          ),
-        ],
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showAddNoteDialog,
+        child: const Icon(Icons.add),
       ),
     );
   }

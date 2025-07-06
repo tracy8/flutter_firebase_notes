@@ -1,19 +1,14 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_firebase_notes/screens/notes_screen.dart';
-
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'firebase_options.dart';
-import 'cubit/authentication/auth_cubit.dart';
-import 'data/auth_repository.dart';
-import 'screens/auth_screen.dart';
+import 'providers/auth_provider.dart';
+import 'providers/notes_provider.dart';
+import 'widgets/auth_wrapper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
 
@@ -22,22 +17,19 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => AuthCubit(AuthRepository())..checkAuthStatus(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => NotesProvider()),
+      ],
       child: MaterialApp(
-        title: 'Flutter Firebase Notes',
-        debugShowCheckedModeBanner: false,
+        title: 'Notes App',
         theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
           useMaterial3: true,
-          colorSchemeSeed: Colors.indigo,
         ),
-        home: FirebaseAuth.instance.currentUser == null
-            ? const AuthScreen()
-            : const NotesScreen(),
-        routes: {
-          '/notes': (_) => const NotesScreen(),
-          '/auth': (_) => const AuthScreen(),
-        },
+        home: const AuthWrapper(),
+        debugShowCheckedModeBanner: false,
       ),
     );
   }

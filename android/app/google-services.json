@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "948679279392",
-    "project_id": "flutter-notes-app-280be",
-    "storage_bucket": "flutter-notes-app-280be.firebasestorage.app"
+    "project_number": "103649307024",
+    "project_id": "fir-notes-64dc0",
+    "storage_bucket": "fir-notes-64dc0.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:948679279392:android:1c3456b338ce92fe588d45",
+        "mobilesdk_app_id": "1:103649307024:android:d4567d0625c30309b6eb15",
         "android_client_info": {
-          "package_name": "com.example.flutter_firebase_notes"
+          "package_name": "com.example.flutter_notes_app_firebase"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyA9J9PWWK7ANfBvF0pboKAUm5gPMjXJBfA"
+          "current_key": "AIzaSyB6aYXyG2sGJWPIg799A9o5N2JNhOMYC5c"
         }
       ],
       "services": {
