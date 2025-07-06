@@ -53,10 +53,10 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyB6aYXyG2sGJWPIg799A9o5N2JNhOMYC5c',
-    appId: '1:103649307024:android:d4567d0625c30309b6eb15',
-    messagingSenderId: '103649307024',
-    projectId: 'fir-notes-64dc0',
-    storageBucket: 'fir-notes-64dc0.firebasestorage.app',
+    apiKey: 'AIzaSyA9J9PWWK7ANfBvF0pboKAUm5gPMjXJBfA',
+    appId: '1:948679279392:android:33e4393744a82a7b588d45',
+    messagingSenderId: '948679279392',
+    projectId: 'flutter-notes-app-280be',
+    storageBucket: 'flutter-notes-app-280be.firebasestorage.app',
   );
 }

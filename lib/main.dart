@@ -23,9 +23,9 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => NotesProvider()),
       ],
       child: MaterialApp(
-        title: 'Notes App',
+        title: 'My Notes App',
         theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.redAccent),
           useMaterial3: true,
         ),
         home: const AuthWrapper(),

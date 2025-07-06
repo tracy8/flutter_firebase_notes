@@ -58,8 +58,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (mounted) {
       if (success) {
         _showSnackBar('Account created successfully!');
-        // Navigate back to sign in or let auth wrapper handle it
-        Navigator.of(context).pop();
+        Navigator.of(context).pop(); // go back to sign in
       } else if (authProvider.errorMessage.isNotEmpty) {
         _showSnackBar(authProvider.errorMessage, isError: true);
       }
@@ -73,6 +72,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: const Text('Sign Up'),
         backgroundColor: Colors.transparent,
@@ -83,17 +83,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
         ),
       ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Consumer<AuthProvider>(
             builder: (context, authProvider, child) {
               return Form(
                 key: _formKey,
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Create Account
+                    const SizedBox(height: 40),
                     Text(
                       'Create Account',
                       style: Theme.of(context).textTheme.headlineMedium,
@@ -102,14 +101,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     const SizedBox(height: 8),
                     Text(
                       'Join us to start taking notes',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyLarge
+                          ?.copyWith(color: Colors.grey[600]),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 32),
 
-                    // Email Field
+                    // Email
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
@@ -124,7 +124,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Password Field
+                    // Password
                     TextFormField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
@@ -151,7 +151,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Confirm Password Field
+                    // Confirm Password
                     TextFormField(
                       controller: _confirmPasswordController,
                       obscureText: _obscureConfirmPassword,
@@ -168,7 +168,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           onPressed: () {
                             setState(() {
                               _obscureConfirmPassword =
-                                  !_obscureConfirmPassword;
+                              !_obscureConfirmPassword;
                             });
                           },
                         ),
@@ -191,17 +191,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         ),
                         child: authProvider.isLoading
                             ? const CircularProgressIndicator(
-                                color: Colors.white,
-                              )
+                          color: Colors.white,
+                        )
                             : const Text(
-                                'Sign Up',
-                                style: TextStyle(fontSize: 16),
-                              ),
+                          'Sign Up',
+                          style: TextStyle(fontSize: 16),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
 
-                    // Navigate to Sign In
+                    // Already have account
                     TextButton(
                       onPressed: authProvider.isLoading ? null : _navigateBack,
                       child: const Text('Already have an account? Sign In'),
